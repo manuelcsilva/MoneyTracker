@@ -1,21 +1,86 @@
 from pathlib import Path
-from tkinter import StringVar, Tk, Canvas, Entry, Text, Button, PhotoImage, Checkbutton
+from tkinter import StringVar, Tk, Canvas, Entry, Text, Button, PhotoImage, Checkbutton, messagebox, filedialog, Menu
+import openpyxl
 
 
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path(r"assets\frame0")
 
+# Load Excel File (.xlsx)
+wb = openpyxl.load_workbook('exportmodel.xlsx')
+main = wb.active
+
+# Variaveis globais
+tipo = ''
+linha = ''
+
 
 def relative_to_assets(path: str) -> Path:
     return ASSETS_PATH / Path(path)
+def novo():
+    global tipo, linha, currency_style, checkbox_var, checkbox2_var
+    print(checkbox_var.get(), checkbox2_var.get())
+    if checkbox_var.get() == '1' and checkbox2_var.get() == '0':
+        tipo = 'Receita'
+    elif checkbox_var.get() == '0' and checkbox2_var.get() == '1':
+        tipo = 'Despesa'
+    else:
+        messagebox.showwarning('Tipo', 'Tipo invalido (Receita ou Despesa?)')
+        return
+    linha = main[f'F2'].value
+    main[f'F2'] = linha + 1
+    print('Linha:',linha)
+    main[f'A{linha}'] = entry_1.get()
+    print(entry_1.get())
+    main[f'B{linha}'] = entry_2.get()
+    print(entry_2.get())
+    main[f'C{linha}'] = entry_4.get("1.0", "end-1c")
+    print(entry_4.get("1.0", "end-1c"))
+    if tipo == 'Despesa':
+        main[f'D{linha}'] = float(entry_3.get())
+        main[f'D{linha}'].number_format = '#,##0.00 €' 
+        print(entry_3.get())
+    elif tipo == 'Receita':
+        main[f'E{linha}'] = float(entry_3.get())
+        main[f'E{linha}'].number_format = '#,##0.00 €' 
+        print(entry_3.get())
+    entry_1.delete(0, 2)
+    entry_2.delete(0, 40)
+    entry_3.delete(0, 40)
+    entry_4.delete("1.0", "end")
 
+def salvar():
+    global linha
+    filename = filedialog.asksaveasfilename(title = "Select a File", 
+                                          filetypes = (("Excel", 
+                                                        "*.xlsx*"), 
+                                                       ("all files", 
+                                                        "*.*")),defaultextension='.xlsx')
+    print(filename)
+    wb.save(filename)
+    print(f'Gurdado no ficheiro "{filename}".')
+    messagebox.showinfo('Guardado', f'Gurdado em {filename}')
+
+def load():
+    global wb, main
+    filename = filedialog.askopenfilename(title = "Select a File", 
+                                          filetypes = (("Excel", 
+                                                        "*.xlsx*"), 
+                                                       ("all files", 
+                                                        "*.*")),defaultextension='.xlsx')
+    wb = openpyxl.load_workbook(filename)
+    main = wb.active
+    print(main[f'F2'].value)
+    print(filename)
+    
 
 
 window = Tk()
 
 window.geometry("294x320")
 window.configure(bg = "#FFFFFF")
-
+window.title("MoneyTracker")
+window.call("wm", "iconphoto", window._w, PhotoImage(file=relative_to_assets("icon.png")))
 
 
 canvas = Canvas(
@@ -50,7 +115,7 @@ canvas.create_text(
     21.0,
     97.0,
     anchor="nw",
-    text="Data da despesa",
+    text="Dia (DD/MM/AAAA)",
     fill="#000000",
     font=("JetBrains Mono", 12 * -1)
 )
@@ -168,11 +233,12 @@ button_1 = Button(
     image=button_image_1,
     borderwidth=0,
     highlightthickness=0,
-    command=lambda: print("button_1 clicked"),
-    relief="flat"
+    command=lambda: novo(),
+    relief="flat",
+    background='#FFFFFF'
 )
 button_1.place(
-    x=211.0,
+    x=194.0,
     y=267.0,
     width=66.0,
     height=36.0
@@ -184,11 +250,28 @@ button_2 = Button(
     image=button_image_2,
     borderwidth=0,
     highlightthickness=0,
-    command=lambda: print(checkbox2_var.get()),
-    relief="flat"
+    command=lambda: salvar(),
+    relief="flat",
+    background='#FFFFFF'
 )
 button_2.place(
-    x=131.0,
+    x=114.0,
+    y=267.0,
+    width=66.0,
+    height=36.0
+)
+button_image_3 = PhotoImage(
+    file=relative_to_assets("button_3.png"))
+button_3 = Button(
+    image=button_image_3,
+    borderwidth=0,
+    highlightthickness=0,
+    command=lambda: load(),
+    relief="flat",
+    background='#FFFFFF'
+)
+button_3.place(
+    x=34.0,
     y=267.0,
     width=66.0,
     height=36.0
